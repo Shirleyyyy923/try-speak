@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <title>Kuiz Tatabahasa Kata Kerja Bahasa Melayu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f2f2f2;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .question {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .result {
+            background: #e6ffe6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .history {
+            background: #e6f3ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #ddd;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+        .save-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .save-btn {
+            background-color: #2196F3;
+            margin: 5px;
+        }
+        .save-btn:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Kuiz Tatabahasa Kata Kerja Bahasa Melayu</h2>
+
+<div class="tabs">
+    <div class="tab active" onclick="showTab('quiz')">Buat Kuiz</div>
+    <div class="tab" onclick="showTab('history')">Lihat Sejarah</div>
+</div>
+
+<div id="quiz" class="tab-content active">
+    <form id="quizForm">
+        <label>Nama:</label><br>
+        <input type="text" id="name" required><br><br>
+
+        <label>Kelas:</label><br>
+        <input type="text" id="class" required><br><br>
+
+        <div id="questions"></div>
+
+        <button type="button" onclick="submitQuiz()">Hantar Jawapan</button>
+        <button type="button" onclick="saveProgress()">Simpan Kemajuan</button>
+        <button type="button" onclick="loadProgress()">Muatkan Kemajuan</button>
+    </form>
+
+    <div id="result" class="result hidden"></div>
+</div>
+
+<div id="history" class="tab-content">
+    <h3>Rekod Kuiz Anda</h3>
+    <div id="historyList"></div>
+</div>
+
+<script>
+const questions = [
+    {
+        q: "Pilih kata kerja yang betul: Ali sedang ___ buku di perpustakaan.",
+        options: ["membaca", "bacaan", "pembaca", "dibaca"],
+        answer: "membaca",
+        explain: "'Membaca' adalah kata kerja aktif yang menunjukkan perbuatan sedang dilakukan.",
+        encourage: "Tahap pemahaman anda tentang kata kerja aktif sudah baik!"
+    },
+    {
+        q: "Pilih bentuk kata kerja yang betul: Mereka telah ___ rumah baru di bandar.",
+        options: ["membeli", "belian", "pembeli", "terbeli"],
+        answer: "membeli",
+        explain: "'Membeli' adalah kata kerja aktif dengan awalan 'me-' yang menunjukkan perbuatan telah selesai.",
+        encourage: "Bagus! Anda sudah faham penggunaan kata kerja dengan awalan 'me-'."
+    },
+    {
+        q: "Pilih kata kerja pasif yang betul: Buku itu ___ oleh adik saya.",
+        options: ["membaca", "dibaca", "bacaan", "pembaca"],
+        answer: "dibaca",
+        explain: "'Dibaca' adalah kata kerja pasif dengan awalan 'di-' yang menunjukkan perbuatan dilakukan ke atas subjek.",
+        encourage: "Hebat! Anda sudah menguasai konsep kata kerja pasif."
+    },
+    {
+        q: "Pilih kata kerja transitif: Ibu ___ sayur di dapur.",
+        options: ["memasak", "berlari", "tidur", "ketawa"],
+        answer: "memasak",
+        explain: "'Memasak' adalah kata kerja transitif kerana memerlukan objek (sayur).",
+        encourage: "Bagus! Anda dapat membezakan kata kerja transitif dengan baik."
+    },
+    {
+        q: "Pilih kata kerja tak transitif: Budak itu ___ dengan kuat.",
+        options: ["membaca", "menulis", "menangis", "memasak"],
+        answer: "menangis",
+        explain: "'Menangis' adalah kata kerja tak transitif kerana tidak memerlukan objek.",
+        encourage: "Tahniah! Anda sudah faham konsep kata kerja tak transitif."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Kami akan ___ ke Kuala Lumpur esok.",
+        options: ["perjalanan", "berjalan", "pergi", "kedatangan"],
+        answer: "pergi",
+        explain: "'Pergi' adalah kata kerja dasar yang sesuai dalam konteks ini.",
+        encourage: "Bagus! Anda telah memilih kata kerja yang paling sesuai."
+    },
+    {
+        q: "Pilih kata kerja berawalan 'ber-': Mereka ___ di taman setiap pagi.",
+        options: ["berlari", "melari", "pelari", "larian"],
+        answer: "berlari",
+        explain: "'Berlari' adalah kata kerja dengan awalan 'ber-' yang menunjukkan perbuatan.",
+        encourage: "Hebat! Anda sudah menguasai penggunaan awalan 'ber-'."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Pokok itu ___ ditiup angin kencang.",
+        options: ["terjatuh", "menjatuh", "jatuhan", "penjatuh"],
+        answer: "terjatuh",
+        explain: "'Terjatuh' adalah kata kerja dengan awalan 'ter-' yang menunjukkan keadaan tidak sengaja.",
+        encourage: "Bagus! Anda faham makna awalan 'ter-' dalam kata kerja."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Adik ___ basikal baru.",
+        options: ["mempunyai", "punya", "kepunyaan", "dimiliki"],
+        answer: "mempunyai",
+        explain: "'Mempunyai' adalah kata kerja yang menunjukkan pemilikan.",
+        encourage: "Tahniah! Anda telah memilih kata kerja pemilikan yang betul."
+    },
+    {
+        q: "Pilih kata kerja perintah: ___ buku itu kepada saya.",
+        options: ["Berikan", "Memberi", "Pemberian", "Diberi"],
+        answer: "Berikan",
+        explain: "'Berikan' adalah kata kerja perintah yang digunakan untuk menyuruh.",
+        encourage: "Bagus! Anda tahu menggunakan kata kerja perintah dengan betul."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Air ___ dari cerek itu.",
+        options: ["tertumpah", "menumpah", "tumpahan", "penumpah"],
+        answer: "tertumpah",
+        explain: "'Tertumpah' menunjukkan perbuatan tidak sengaja dengan awalan 'ter-'.",
+        encourage: "Hebat! Anda faham nuansa makna awalan 'ter-'."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Mereka ___ kerja rumah bersama-sama.",
+        options: ["menyiapkan", "kesiapan", "penyiap", "disiapkan"],
+        answer: "menyiapkan",
+        explain: "'Menyiapkan' adalah kata kerja aktif transitif dengan awalan 'meny-'.",
+        encourage: "Bagus! Anda menguasai kata kerja dengan awalan 'meny-'."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Budak itu ___ di atas lantai.",
+        options: ["tergelincir", "menggelincir", "gelinciran", "penggelincir"],
+        answer: "tergelincir",
+        explain: "'Tergelincir' menunjukkan perbuatan tidak sengaja dengan awalan 'ter-'.",
+        encourage: "Tahniah! Anda dapat membezakan makna awalan dengan baik."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Kami ___ makan malam di restoran itu.",
+        options: ["telah", "sudah", "pernah", "akan"],
+        answer: "pernah",
+        explain: "'Pernah' adalah kata kerja bantu yang menunjukkan pengalaman masa lalu.",
+        encourage: "Bagus! Anda tahu menggunakan kata bantu dengan tepat."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Pakaian itu ___ oleh ibu.",
+        options: ["mencuci", "dicuci", "cucian", "pencuci"],
+        answer: "dicuci",
+        explain: "'Dicuci' adalah kata kerja pasif dengan awalan 'di-'.",
+        encourage: "Hebat! Anda menguasai konsep kata kerja pasif."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Dia ___ pintu dengan kuat.",
+        options: ["mengetuk", "ketukan", "diketuk", "pengetuk"],
+        answer: "mengetuk",
+        explain: "'Mengetuk' adalah kata kerja aktif transitif dengan awalan 'me-'.",
+        encourage: "Bagus! Anda dapat memilih kata kerja aktif yang tepat."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Bola itu ___ ke dalam gol.",
+        options: ["termasuk", "memasuki", "masukan", "dimasuki"],
+        answer: "termasuk",
+        explain: "'Termasuk' menunjukkan perbuatan tidak sengaja dengan awalan 'ter-'.",
+        encourage: "Tahniah! Anda faham penggunaan awalan 'ter-'."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Mereka ___ berenang di kolam.",
+        options: ["suka", "sukaan", "disukai", "kesukaan"],
+        answer: "suka",
+        explain: "'Suka' adalah kata kerja yang menunjukkan perasaan.",
+        encourage: "Bagus! Anda tahu menggunakan kata kerja perasaan."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Kami ___ menonton filem itu.",
+        options: ["ingin", "keinginan", "diingini", "teringin"],
+        answer: "ingin",
+        explain: "'Ingin' adalah kata kerja yang menunjukkan kehendak.",
+        encourage: "Hebat! Anda dapat memilih kata kerja kehendak yang tepat."
+    },
+    {
+        q: "Pilih kata kerja yang betul: Surat itu ___ oleh ayah.",
+        options: ["menulis", "tulisan", "ditulis", "penulis"],
+        answer: "ditulis",
+        explain: "'Ditulis' adalah kata kerja pasif dengan awalan 'di-'.",
+        encourage: "Bagus! Anda menguasai konsep kata kerja pasif dengan baik."
+    }
+];
+
+function showTab(tabId) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Deactivate all tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabId).classList.add('active');
+    
+    // Activate selected tab
+    event.currentTarget.classList.add('active');
+    
+    // If history tab is selected, load history
+    if (tabId === 'history') {
+        loadHistory();
+    }
+}
+
+function submitQuiz() {
+    const name = document.getElementById('name').value;
+    const studentClass = document.getElementById('class').value;
+    
+    if (!name || !studentClass) {
+        alert("Sila isi maklumat peribadi anda!");
+        return;
+    }
+    
+    let score = 0;
+    let results = [];
+    let unanswered = 0;
+    
+    questions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="q${index}"]:checked`);
+        const isCorrect = selected && selected.value === q.answer;
+        
+        if (isCorrect) score++;
+        if (!selected) unanswered++;
+        
+        results.push({
+            question: q.q,
+            selected: selected ? selected.value : "Tidak dijawab",
+            correct: q.answer,
+            isCorrect: isCorrect,
+            explain: q.explain,
+            encourage: q.encourage
+        });
+    });
+    
+    // Save the attempt to history
+    saveAttempt(name, studentClass, score, results);
+    
+    // Display results
+    displayResults(name, studentClass, score, results, unanswered);
+}
+
+function displayResults(name, studentClass, score, results, unanswered) {
+    let output = `
+        <h3>Nama: ${name}</h3>
+        <h3>Kelas: ${studentClass}</h3>
+        <h3>Markah: <span class="${score >= 15 ? 'correct' : 'incorrect'}">${score} / 20</span></h3>
+        ${unanswered > 0 ? `<p>Perhatian: Anda ada ${unanswered} soalan tidak dijawab</p>` : ''}
+        <p>${getFeedback(score)}</p>
+        <hr>
+    `;
+    
+    results.forEach((r, index) => {
+        output += `
+            <div class="question">
+                <p><strong>Soalan ${index + 1}: ${r.isCorrect ? 'Betul ✅' : 'Salah ❌'}</strong></p>
+                <p>Soalan: ${r.question}</p>
+                ${!r.isCorrect ? `<p>Jawapan anda: <span class="incorrect">${r.selected}</span></p>` : ''}
+                <p>Jawapan betul: <span class="correct">${r.correct}</span></p>
+                <p>Penjelasan: ${r.explain}</p>
+                <p>Kata-kata semangat: ${r.encourage}</p>
+            </div>
+        `;
+    });
+    
+    document.getElementById('result').innerHTML = output;
+    document.getElementById('result').classList.remove('hidden');
+    
+    // Scroll to results
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+}
+
+function getFeedback(score) {
+    if (score === 20) {
+        return "Cemerlang! Semua jawapan betul! Penguasaan kata kerja anda sangat baik! 🎉";
+    } else if (score >= 17) {
+        return "Sangat baik! Hanya beberapa kesilapan kecil, anda sudah menguasai kebanyakan kandungan! ✨";
+    } else if (score >= 14) {
+        return "Baik! Asas kata kerja sudah difahami, baca penjelasan untuk soalan salah, pasti boleh lebih baik! 😊";
+    } else if (score >= 10) {
+        return "Ada ruang untuk penambahbaikan! Setiap kesilapan adalah peluang belajar, teruskan usaha! 💪";
+    } else {
+        return "Mungkin ini kali pertama anda buat kuiz sebegini? Jangan risau! Teruskan belajar, pasti akan bertambah baik! 🌱";
+    }
+}
+
+function saveAttempt(name, studentClass, score, results) {
+    const attempts = JSON.parse(localStorage.getItem('kataKerjaQuizAttempts') || '[]');
+    const attempt = {
+        date: new Date().toLocaleString(),
+        name,
+        class: studentClass,
+        score,
+        results
+    };
+    
+    attempts.unshift(attempt); // Add new attempt at beginning
+    localStorage.setItem('kataKerjaQuizAttempts', JSON.stringify(attempts));
+}
+
+function loadHistory() {
+    const attempts = JSON.parse(localStorage.getItem('kataKerjaQuizAttempts') || '[]');
+    const historyList = document.getElementById('historyList');
+    
+    if (attempts.length === 0) {
+        historyList.innerHTML = "<p>Anda belum mempunyai sebarang rekod kuiz, sila buat kuiz dahulu!</p>";
+        return;
+    }
+    
+    let html = "";
+    attempts.forEach((attempt, index) => {
+        html += `
+            <div class="question" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px;">
+                <h3>Kuiz #${index + 1} - ${attempt.date}</h3>
+                <p>Nama: ${attempt.name} | Kelas: ${attempt.class}</p>
+                <p>Markah: <strong>${attempt.score} / 20</strong></p>
+                <button onclick="viewAttemptDetails(${index})">Lihat Butiran</button>
+                <div id="attemptDetails${index}" style="display: none; margin-top: 10px;">
+                    ${attempt.results.map((r, qIndex) => `
+                        <div style="margin-bottom: 15px; padding: 10px; background: ${r.isCorrect ? '#e6ffe6' : '#ffe6e6'}; border-radius: 5px;">
+                            <p><strong>Soalan ${qIndex + 1}: ${r.isCorrect ? 'Betul ✅' : 'Salah ❌'}</strong></p>
+                            <p>Soalan: ${r.question}</p>
+                            ${!r.isCorrect ? `<p>Jawapan anda: ${r.selected}</p>` : ''}
+                            <p>Jawapan betul: ${r.correct}</p>
+                            <p>Penjelasan: ${r.explain}</p>
+                            <p>Kata-kata semangat: ${r.encourage}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    historyList.innerHTML = html;
+}
+
+function viewAttemptDetails(index) {
+    const detailsDiv = document.getElementById(`attemptDetails${index}`);
+    if (detailsDiv.style.display === 'none') {
+        detailsDiv.style.display = 'block';
+    } else {
+        detailsDiv.style.display = 'none';
+    }
+}
+
+function saveProgress() {
+    const name = document.getElementById('name').value;
+    const studentClass = document.getElementById('class').value;
+    
+    if (!name || !studentClass) {
+        alert("Sila isi maklumat peribadi dahulu!");
+        return;
+    }
+    
+    const progress = {
+        name,
+        class: studentClass,
+        answers: []
+    };
+    
+    questions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="q${index}"]:checked`);
+        progress.answers.push(selected ? selected.value : null);
+    });
+    
+    localStorage.setItem('kataKerjaQuizProgress', JSON.stringify(progress));
+    alert("Kemajuan telah disimpan! Anda boleh sambung kuiz ini kemudian.");
+}
+
+function loadProgress() {
+    const progress = JSON.parse(localStorage.getItem('kataKerjaQuizProgress'));
+    
+    if (!progress) {
+        alert("Tiada kemajuan yang disimpan ditemui!");
+        return;
+    }
+    
+    document.getElementById('name').value = progress.name;
+    document.getElementById('class').value = progress.class;
+    
+    progress.answers.forEach((answer, index) => {
+        if (answer) {
+            const radio = document.querySelector(`input[name="q${index}"][value="${answer}"]`);
+            if (radio) radio.checked = true;
+        }
+    });
+    
+    alert("Kemajuan telah dimuatkan! Anda boleh sambung kuiz anda.");
+}
+
+window.onload = function() {
+    const qDiv = document.getElementById('questions');
+    questions.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.className = "question";
+        div.innerHTML = `<p><strong>Soalan ${index + 1}.</strong> ${q.q}</p>` +
+                        q.options.map(opt => `
+                            <label><input type="radio" name="q${index}" value="${opt}"> ${opt}</label><br>
+                        `).join('');
+        qDiv.appendChild(div);
+    });
+    
+    // Check if there's saved progress
+    if (localStorage.getItem('kataKerjaQuizProgress')) {
+        if (confirm("Terdapat kemajuan yang disimpan, mahu memuatkannya?")) {
+            loadProgress();
+        }
+    }
+}
+</script>
+
+</body>
+</html>
